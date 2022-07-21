@@ -70,7 +70,7 @@ exports.create = async (req, res) => {
 async function askAI (file) {
     url = "http://localhost:5000/predict";
     formData = new FormData();
-    formData.append('image', file);
+    formData.append('image', file.data, file.name);
     responseAI = {};
 
     await axios.post(url, formData, {
