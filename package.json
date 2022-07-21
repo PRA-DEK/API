@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "sequelize db:migrate && sequelize db:seed:all && node server.js",
+    "seed": "sequelize db:seed:all",
+    "dev": "sequelize db:migrate && node server.js",
     "start": "sequelize db:migrate && node server.js"
   },
   "repository": {

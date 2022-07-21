@@ -1,17 +1,26 @@
 const db = require("../models");
 const axios = require('axios');
 const FormData = require('form-data');
-const { response } = require("express");
+const { Readable } = require('stream');
 const Meeting = db.Meeting;
+const Birds = db.Birds;
 const Op = db.Sequelize.Op;
 
 // Create and Save a new Meeting
 exports.create = async (req, res) => {
 
     // Validate request
-    if (!req.files.image) {
+    if (!req.files) {
         res.status(400).send({
             message: "Content can not be empty!"
+        });
+        return;
+    }
+
+    // Valide if there is an image
+    if (!req.files.image) {
+        res.status(400).send({
+            message: "Image not found!"
         });
         return;
     }
@@ -19,18 +28,27 @@ exports.create = async (req, res) => {
     currentDate = new Date();
     responseAI = await askAI(req.files.image);
 
-    if(!responseAI.found) {
+    // Verify if we found the bird
+    if(!responseAI.birds) {
         res.status(500).send({
             message: responseAI.message
         });
         return;
     }
 
-    //TODO le user_id ne se met pas à jour
+    // We get the id of the bird found
+    bird = await Birds.findOne({ where: { scientific_name: responseAI.birds } });
+
+    // If the bird is not in the database
+    if(bird.errno) {
+        res.status(500).send({message: bird.errno.sqlMessage});
+        return;
+    }
+
     // Create a meetings
     const meeting = {
         user_id: req.body.user_id,
-        bird_id: responseAI.birds,
+        bird_id: bird.id,
         date: currentDate,
         place: req.body.place,
         weather: req.body.weather,
@@ -38,7 +56,7 @@ exports.create = async (req, res) => {
     };
     
     // Save Meeting in the database
-    Meeting.create(meeting)
+    meetings = await Meeting.create(meeting)
     .then(data => {
         res.status(200).send(data);
     })
@@ -51,21 +69,21 @@ exports.create = async (req, res) => {
 };
 
 async function askAI (file) {
-    url = "url/AI";
-    form = new FormData();
-    form.append('image', file.data, file.name);
+    url = "http://localhost:5000/predict";
+    formData = new FormData();
+    formData.append('image', Readable.from(file.data), file.name);
     responseAI = {};
 
-    await axios.post(url, {
+    await axios.post(url, formData, {
         headers: {
             'Content-Type': 'multipart/form-data'
         }
     })
     .then(function (response) {
-        responseAI = { birds: response, found: true, message: "Everything is all right." }
+        responseAI = { birds: response, message: "Everything is all right." }
     })
     .catch(function (error) {
-        responseAI = {birds: false, found: false, message: error.message || "Something went wrong, please try again."}
+        responseAI = {birds: null, message: error.message || "Something went wrong, please try again."}
     });
 
     return responseAI;
