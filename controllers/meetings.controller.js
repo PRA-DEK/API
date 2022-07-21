@@ -1,7 +1,6 @@
 const db = require("../models");
 const axios = require('axios');
 const FormData = require('form-data');
-const { Readable } = require('stream');
 const Meeting = db.Meeting;
 const Birds = db.Birds;
 const Op = db.Sequelize.Op;
@@ -71,7 +70,7 @@ exports.create = async (req, res) => {
 async function askAI (file) {
     url = "http://localhost:5000/predict";
     formData = new FormData();
-    formData.append('image', Readable.from(file.data), file.name);
+    formData.append('image', file);
     responseAI = {};
 
     await axios.post(url, formData, {
