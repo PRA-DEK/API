@@ -57,7 +57,9 @@ exports.create = async (req, res) => {
     // Save Meeting in the database
     meetings = await Meeting.create(meeting)
     .then(data => {
-        res.status(200).send(data);
+        res.status(200).send({
+            species: responseAI.birds
+        });
     })
     .catch(err => {
         res.status(500).send({
