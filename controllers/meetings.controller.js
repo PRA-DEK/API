@@ -39,8 +39,8 @@ exports.create = async (req, res) => {
     bird = await Birds.findOne({ where: { scientific_name: responseAI.birds } });
 
     // If the bird is not in the database
-    if(bird.errno) {
-        res.status(500).send({message: bird.errno.sqlMessage});
+    if(bird == null) {
+        res.status(500).send({message: 'Bird not found'});
         return;
     }
 
@@ -81,10 +81,10 @@ async function askAI (file) {
         }
     })
     .then(function (response) {
-        responseAI = { birds: response, message: "Everything is all right." }
+        responseAI = { birds: response.data, message: "Everything is all right." }
     })
     .catch(function (error) {
-        responseAI = {birds: null, message: error.message || "Something went wrong, please try again."}
+        responseAI = { birds: null, message: error.message || "Something went wrong, please try again." }
     });
 
     return responseAI;
